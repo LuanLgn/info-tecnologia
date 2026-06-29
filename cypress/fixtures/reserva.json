@@ -1,0 +1,42 @@
+{
+  "busca": {
+    "local": "Belo Horizonte",
+    "lojaEsperada": "Aeroporto De Confins",
+    "horaRetirada": "12:00",
+    "horaDevolucao": "12:00"
+  },
+  "veiculo": {
+    "grupoEsperado": "Hatch Compacto"
+  },
+  "cenarios_negativos": {
+    "data_invalida": {
+      "descricao": "Data de devolução anterior à data de retirada",
+      "retirada": "03/07/2026",
+      "devolucao": "30/06/2026"
+    },
+    "bypass_urls": [
+      {
+        "descricao": "Tentar acessar Passo 2 sem preencher formulário",
+        "url": "/reserva/passo-2",
+        "redirecionamento_esperado": "/"
+      },
+      {
+        "descricao": "Tentar acessar Passo 3 sem selecionar veículo",
+        "url": "/reserva/passo-3",
+        "redirecionamento_esperado": "/"
+      }
+    ],
+    "inputs_invalidos": [
+      {
+        "campo": "Motorista Adicional",
+        "valor_invalido": "-1",
+        "comportamento_esperado": "O campo não deve aceitar valores negativos"
+      },
+      {
+        "campo": "Bebê Conforto",
+        "valor_invalido": "999",
+        "comportamento_esperado": "O campo deve ter um limite máximo de unidades"
+      }
+    ]
+  }
+}

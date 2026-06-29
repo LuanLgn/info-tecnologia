@@ -1,0 +1,13 @@
+{
+  "name": "info-tecnica-unidas",
+  "version": "1.0.0",
+  "description": "Automacao de testes para o portal Unidas",
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^13.12.0"
+  }
+}
