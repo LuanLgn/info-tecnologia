@@ -60,10 +60,9 @@ class SummaryPage {
         .parents('[class*="card"], [class*="item"], [class*="service"], li, .row')
         .first()
         .within(($card) => {
-          // Botão "+" pode ser "+" ou "add" ou ícone
-          cy.get('button').filter((i, el) => /^\+$|add/i.test(el.textContent.trim()))
-            .first()
-            .click({ force: true });
+          // Cobre: botão com texto "+", "add", mat-icon "add", ou último botão do card
+          // O botão de incrementar é sempre o ÚLTIMO botão (após o contador e o "-")
+          cy.get('button').last().click({ force: true });
         });
       cy.wait(600);
     });

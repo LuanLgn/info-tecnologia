@@ -1,6 +1,21 @@
+# Dependências
 node_modules/
+
+# Python cache
 __pycache__/
+*.pyc
+
+# Cypress — artefatos gerados a cada execução (não versionar)
+# Os prints e vídeos são gerados localmente pelo `npx cypress run`
 cypress/videos/
 cypress/screenshots/
+cypress/downloads/
+
+# Ambiente e configs locais
 .DS_Store
 .env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
