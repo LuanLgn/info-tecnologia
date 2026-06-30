@@ -1,16 +1,15 @@
 Este repositório contém a suíte de testes E2E (End-to-End) e a documentação técnica da auditoria realizada na plataforma InfoTecnologia.
 
 O escopo do projeto vai além da automação de fluxos funcionais, incluindo:
-- Testes exploratórios com foco em segurança
-- Análise estática do bundle JavaScript (engenharia reversa)
-- Mapeamento de falhas de UX e inconsistências de comportamento
-- Documentação de bugs com impacto real no sistema
+- Testes exploratórios com foco em regras de negócio de fluxo de aluguel (carrinho, datas, opcionais)
+- Validação do motor de cálculos dinâmico (soma de diárias, taxas e equipamentos extras)
+- Mapeamento de falhas de segurança de rotas e inconsistências no Frontend
+- Documentação de bugs estruturais com impacto real no sistema
 
 Durante a análise da aplicação foram identificados:
-- 2 Vulnerabilidades críticas de segurança (IDOR / ausência de autenticação)
-- 4 bugs de alto impacto funcional
-- 3 problemas de UX e comportamento inconsistente
-- Análise de código (main.js minificado no front-end)
+- 2 Vulnerabilidades de controle de sessão (bypass direto para rotas de fechamento sem preencher dados)
+- 4 bugs de lógica matemática e persistência de carrinho
+- 3 problemas de UX (seletores Angular Material falhos)
 - Cobertura de testes E2E com Cypress + Page Object Model (POM)
 
 ### Arquitetura de Automação
@@ -19,104 +18,83 @@ A automação foi estruturada utilizando Cypress com padrão Page Object Model (
 ```
 cypress/e2e/
 ├── pages/
-│   ├── LoginPage.js
-│   ├── DatabasePage.js
-│   └── DashboardPage.js
+│   ├── HomePage.js
+│   ├── VehicleSelectionPage.js
+│   └── SummaryPage.js
 │
 ├── specs/
-│   ├── login.cy.js
-│   ├── database.cy.js
-│   └── dashboard.cy.js
-│
-src/
-└── main-OLCR30TF.js   # Bundle analisado via code review estático
+│   ├── 01_fluxo_positivo.cy.js
+│   ├── 02_validacao_datas.cy.js
+│   ├── 03_bypass_url.cy.js
+│   ├── 04_validacao_opcionais.cy.js
+│   └── 05_links_quebrados.cy.js
 ```
 
-### Análise de Segurança
+### Análise de Segurança & Regras de Negócio
 
-**SEC-001 — Acesso sem autenticação (IDOR)**
-- **Resultado Esperado:** Bloquear acesso não autenticado de usuário.
-- **Resultado Obtido:** Falha de controle de acesso — usuário não autenticado consegue acessar rotas internas diretamente.
+**SEC-001 — Bypass de fluxo via URL**
+- **Resultado Esperado:** O sistema deve validar a sessão e dados em memória, barrando o acesso direto a etapas finais do funil (ex: Passo 3) sem ter selecionado os itens anteriores.
+- **Resultado Obtido:** Permite o carregamento da página de resumo sem dados no backend, gerando instabilidade na aplicação.
 
-**SEC-002 — Rotas internas expostas**
-- `/dashboard`
-- `/dashboard/campanha/bancos-de-dados`
-- `/dashboard/campanha/colmeia-forms`
-- **Resultado:** Todas acessíveis sem autenticação.
+**SEC-002 — Validação Tardia de Datas**
+- **Resultado Esperado:** Barrar o input de devolução menor que o de retirada imediatamente no frontend.
+- **Resultado Obtido:** O sistema aceita a entrada visualmente e apenas trava (ou anula) nas etapas seguintes.
 
-**SEC-003 — XSS potencial (armazenamento)**
-- **Descrição:** Inputs aceitam HTML sem sanitização explícita.
-- **Resultado:** Payload armazenado no sistema, sem execução no ambiente atual.
+**SEC-003 — Manipulação de Inputs Quantitativos**
+- **Descrição:** Inputs de adição de acessórios não possuem sanitização contra números negativos injetados via Console/JS (`dispatchEvent`).
+- **Resultado:** A requisição é enviada para validação. Felizmente, o backend anula os valores, impedindo um cálculo negativo no carrinho.
 
-### Code Review — Erros de Lógica (Bundle JS)
+### Code Review — Erros de Lógica (Frontend / UI)
 
-- **ERR-01 — Bug de timezone (data de criação):** Datas são exibidas com +1 dia dependendo do fuso horário. A causa raiz é o uso de `toISOString()` (UTC ao invés de data local).
-- **ERR-02 — Arquivar = Apagar:** Botão "Arquivar" executa a mesma função de deleção.
-- **ERR-03 — Bypass de validação:** Campo vazio pode ser salvo via múltiplos cliques.
-- **ERR-04 — Refresh destrói dados:** Botão de refresh limpa estado local sem aviso.
-- **ERR-05 — Lupa decorativa:** Botão de busca não possui handler (somente input filtra).
-- **ERR-06 — Empty state inconsistente:** Mensagem de lista vazia não reaparece após deletar todos os itens.
-- **ERR-07 — Login com falso erro:** Credenciais válidas exibem modal de erro antes do login.
-- **ERR-08 — Recuperação de senha inexistente:** Link não possui ação ou rota associada.
+- **ERR-01 — Seletores Ocultos (Angular):** O botão de `+` de opcionais (como "Assento de Elevação") embute um ícone `<mat-icon>` que não dispara o evento caso clicado na borda. 
+- **ERR-02 — Empty State com Delay:** Adicionar e remover acessórios causa recálculos agressivos na árvore do DOM, resultando em flickering (tela piscando).
+- **ERR-03 — Fluxo de erro "Silencioso":** Tentar pular para uma URL 404 redireciona para um fallback não padronizado, quebrando os estilos da página principal.
 
 ### Casos de Teste (QA Evidence)
 
-**TC-LOGIN-001 — Login válido**
-*Pré-condição: Usuário na tela de login*
+**TC-FLUXO-001 — Fluxo Positivo Completo**
+*Pré-condição: Usuário não autenticado na página principal*
 Passos:
-1. Inserir email válido
-2. Inserir senha válida
-3. Clicar em "Entrar"
+1. Buscar local de retirada (Ex: Confins) e data.
+2. Avançar para o painel de veículos.
+3. Escolher o primeiro veículo e prosseguir.
+4. Adicionar opcional (Lavagem Antecipada) na aba de serviços.
+- **Resultado esperado:** Valor somado com sucesso, avançando para a tela final de identificação do motorista.
+*(Evidência)*
 
-- **Resultado esperado:** Redirecionamento direto para `/dashboard`.
-- **Resultado observado:** Modal de erro exibido mesmo com credenciais corretas. Após clicar em "Continuar", login é efetuado.
-*(Evidência — Exemplo)*
-![Evidência de Login Error](./cypress/screenshots/login-error.png)
 
-**TC-DB-001 — Criar item no banco de dados**
+**TC-SEC-001 — Bypass de URL de Resumo**
+*Pré-condição: Sem sessão de reserva ativa.*
 Passos:
-1. Acessar módulo "Bancos de Dados"
-2. Criar novo item
-3. Salvar
+1. Acessar diretamente a rota do Passo 3 de resumo.
+- **Resultado esperado:** Bloqueio e redirect.
+- **Resultado observado:** O layout carrega vazio ou quebrado.
+*(Evidência)*
 
-- **Resultado esperado:** Item persistido via backend e mantido após reload.
-- **Resultado observado:** Item existe apenas em memória, sendo perdido após refresh.
-*(Evidência — Exemplo)*
-![Evidência de Falha de Persistência](./cypress/screenshots/db-error.png)
 
-**TC-DB-002 — Exclusão de item**
-- **Resultado esperado:** Item removido corretamente via backend.
-- **Resultado observado:** Item removido da lista (sem persistência backend envolvida).
-*(Evidência — Exemplo)*
-![Evidência de Deleção Visual](./cypress/screenshots/db-delete.png)
-
-### Mapeamento de Bugs e Easter Eggs
+### Mapeamento de Bugs 
 
 | Módulo | Problema |
 | :--- | :--- |
-| Login | Modal de erro em login válido |
-| Login | Recuperação de senha inativa |
-| Banco de Dados | Arquivar = Apagar |
-| Banco de Dados | Busca decorativa |
-| Banco de Dados | Refresh apaga estado |
-| Banco de Dados | Validação bypassável |
-| Forms | Página em branco |
+| Busca | Permite data de devolução anterior à de retirada visualmente |
+| URL | Rotas de fechamento sem proteção de estado `Guard` |
+| Resumo | Layout quebra se acessado diretamente |
+| Opcionais | Botão (+) possui hitbox menor do que aparenta visualmente |
 
 ### Considerações finais
 Neste projeto, atuei como QA com uma abordagem moderna e ofensiva de qualidade, indo além da automação tradicional de testes.
 
 Minha análise incluiu:
 - automação de testes E2E com Cypress (Page Object Model)
-- análise de segurança com foco em vulnerabilidades
-- investigação de comportamento da aplicação em runtime
-- leitura e engenharia reversa de bundle JavaScript (code review estático)
+- análise de validações matemáticas do carrinho de compras
+- investigação de vulnerabilidades de sessão e rotas
 - identificação de inconsistências estruturais e falhas de UX
-- validação de fluxos críticos e regras de negócio
+- validação de fluxos críticos e regras de negócio complexas
 
-O objetivo não foi apenas validar funcionalidades, mas sim simular uma análise real de qualidade em ambiente de produção, identificando riscos funcionais, estruturais e de segurança.
+O objetivo não foi apenas validar funcionalidades, mas sim simular uma análise real de qualidade em ambiente de produção, identificando riscos funcionais, estruturais e de negócios.
 
 ### Relatório complementar
-A documentação completa dos testes manuais, exploratórios e achados de segurança está disponível no Relatório de Testes anexado a este repositório.
+A documentação completa dos testes manuais, exploratórios e achados funcionais está disponível no Relatório de Testes anexado a este repositório.
 
 ### Encerramento
 Obrigado pela oportunidade de participar do desafio técnico. Fico à disposição para os próximos passos.
