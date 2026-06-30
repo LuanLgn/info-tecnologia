@@ -108,6 +108,16 @@ Para comprovar a estabilidade do fluxo de automação e as validações, acompan
 
 ---
 
+### Documentação Complementar (Google Docs)
+
+A documentação completa do projeto de automação, detalhando o planejamento estratégico, a execução técnica e todos os resultados obtidos pode ser acessada através dos links abaixo:
+
+- 📄 **[Plano de Testes](https://docs.google.com/document/d/1Ukg0CtL-Udo1prqF2RsGxWK8Z-SI61mTcx-KslBQJSs/edit?usp=sharing)**
+- 📊 **[Relatório de Testes](https://docs.google.com/document/d/1DfWHEOKlS2jluu2neajKUvxHP5rYv5SwcYhWktz1Dcs/edit?tab=t.0)**
+- 📸 **[Evidências de Testes](https://docs.google.com/document/d/1nx_H1A8pCELU7TEM_if8ALOrfC4kXU8kDrhfZJqZFA0/edit?tab=t.0)**
+
+---
+
 ### Considerações finais
 Neste projeto, atuei como QA com uma abordagem moderna e ofensiva de qualidade, indo além da automação tradicional de testes.
 
