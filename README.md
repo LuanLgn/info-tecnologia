@@ -1,169 +1,122 @@
-# 🚗 Automação de Testes E2E — Portal Unidas
+Este repositório contém a suíte de testes E2E (End-to-End) e a documentação técnica da auditoria realizada na plataforma InfoTecnologia.
 
-> Projeto de automação de testes desenvolvido como parte do processo seletivo para vaga de Analista de Qualidade (QA) Pleno.  
-> Tecnologia: **Cypress 13** · JavaScript ES6+ · Node.js 22 · GitHub Actions CI/CD
+O escopo do projeto vai além da automação de fluxos funcionais, incluindo:
+- Testes exploratórios com foco em segurança
+- Análise estática do bundle JavaScript (engenharia reversa)
+- Mapeamento de falhas de UX e inconsistências de comportamento
+- Documentação de bugs com impacto real no sistema
 
----
+Durante a análise da aplicação foram identificados:
+- 2 Vulnerabilidades críticas de segurança (IDOR / ausência de autenticação)
+- 4 bugs de alto impacto funcional
+- 3 problemas de UX e comportamento inconsistente
+- Análise de código (main.js minificado no front-end)
+- Cobertura de testes E2E com Cypress + Page Object Model (POM)
 
-## 📋 Sobre o Projeto
-
-Este repositório contém a solução completa para o teste técnico proposto, cobrindo **todos os itens solicitados**:
-
-| Item | Requisito | Entregável |
-|:---:|---|---|
-| 1 | Acessar www.unidas.com.br | Automatizado via `cy.visit()` |
-| 2a | Local, Data e Hora de Retirada/Devolução | `HomePage.js` (Page Object) |
-| 2b | Escolha do grupo de veículos | `VehicleSelectionPage.js` (Page Object) |
-| 2c | Resumo / Proteções / Acessórios e Serviços | `SummaryPage.js` — 6 opcionais cobertos |
-| 3 | Plano de Testes | [`Plano_de_Testes.md`](./Plano_de_Testes.md) |
-| 4 | Evidências de Testes | `cypress/screenshots/` — gerado automaticamente |
-| 5 | Relatório de Testes | [`Relatorio_de_Testes.md`](./Relatorio_de_Testes.md) |
-| 6 | Automação de Testes (Opcional) | ✅ Suíte completa com 5 specs e CI/CD |
-
----
-
-## 🏗️ Arquitetura
+### Arquitetura de Automação
+A automação foi estruturada utilizando Cypress com padrão Page Object Model (POM), garantindo escalabilidade e manutenção.
 
 ```
-Info-tecnica/
-├── cypress/
-│   ├── e2e/                              # Especificações de teste (suítes)
-│   │   ├── 01_fluxo_positivo.cy.js       # CT-001: Caminho Feliz — 13 cenários
-│   │   ├── 02_validacao_datas.cy.js      # CT-002: Data devolução < retirada
-│   │   ├── 03_bypass_url.cy.js           # CT-003: Bypass de URL / pulo de etapas
-│   │   ├── 04_validacao_opcionais.cy.js  # CT-004/005: Opcionais + cenários negativos
-│   │   └── 05_links_quebrados.cy.js      # CT-006: Varredura de links quebrados
-│   ├── fixtures/
-│   │   └── reserva.json                  # Massa de dados parametrizados
-│   ├── support/
-│   │   ├── commands.js                   # Comandos customizados globais
-│   │   ├── e2e.js                        # Setup global
-│   │   └── pages/                        # Page Object Model (POM)
-│   │       ├── HomePage.js
-│   │       ├── VehicleSelectionPage.js
-│   │       └── SummaryPage.js
-│   ├── screenshots/                      # Evidências geradas (gitignore)
-│   └── videos/                           # Gravações MP4 (gitignore)
-├── .github/
-│   └── workflows/
-│       └── cypress.yml                   # Pipeline CI/CD (GitHub Actions)
-├── cypress.config.js                     # Configuração central do Cypress
-├── package.json
-├── Plano_de_Testes.md                    # Documentação: Plano de Testes
-└── Relatorio_de_Testes.md               # Documentação: Relatório de Resultados
+cypress/e2e/
+├── pages/
+│   ├── LoginPage.js
+│   ├── DatabasePage.js
+│   └── DashboardPage.js
+│
+├── specs/
+│   ├── login.cy.js
+│   ├── database.cy.js
+│   └── dashboard.cy.js
+│
+src/
+└── main-OLCR30TF.js   # Bundle analisado via code review estático
 ```
 
----
+### Análise de Segurança
 
-## 🧪 Cenários de Teste
+**SEC-001 — Acesso sem autenticação (IDOR)**
+- **Resultado Esperado:** Bloquear acesso não autenticado de usuário.
+- **Resultado Obtido:** Falha de controle de acesso — usuário não autenticado consegue acessar rotas internas diretamente.
 
-### Positivos — CT-001 (13 cenários)
-| ID | Cenário |
-|---|---|
-| CT-001.1 | Formulário de busca carregado |
-| CT-001.2 | Autocomplete de lojas ao digitar cidade |
-| CT-001.3 | Loja Aeroporto de Confins selecionada |
-| CT-001.4 | Calendário de retirada exibido |
-| CT-001.5 | Navegação para Passo 2 com listagem de veículos |
-| CT-001.6 | Navegação para Passo 3 com resumo da reserva |
-| CT-001.7 | Seção "Acessórios e Serviços" exibida |
-| CT-001.8 | Cadeira de Bebê — valor recalculado |
-| CT-001.9 | Assento de Elevação — valor recalculado |
-| CT-001.10 | Bebê Conforto — valor recalculado |
-| CT-001.11 | Locação Jovem — checkbox + valor recalculado |
-| CT-001.12 | Lavagem Antecipada — checkbox + valor recalculado |
-| CT-001.13 | Todos os opcionais + avanço para Passo 4 |
+**SEC-002 — Rotas internas expostas**
+- `/dashboard`
+- `/dashboard/campanha/bancos-de-dados`
+- `/dashboard/campanha/colmeia-forms`
+- **Resultado:** Todas acessíveis sem autenticação.
 
-### Negativos — CT-002 a CT-006
+**SEC-003 — XSS potencial (armazenamento)**
+- **Descrição:** Inputs aceitam HTML sem sanitização explícita.
+- **Resultado:** Payload armazenado no sistema, sem execução no ambiente atual.
 
-| ID | Cenário | Técnica |
-|---|---|---|
-| CT-002.1 | Data de devolução anterior à retirada | `cy.intercept` — valida que nenhuma requisição é disparada |
-| CT-002.2 | Botão Continuar com formulário incompleto | Assertion de URL sem redirecionamento |
-| CT-003.1 | Bypass direto ao Passo 2 sem sessão | Acesso por URL + verificação de estado vazio |
-| CT-003.2 | Bypass direto ao Passo 3 sem selecionar veículo | Acesso por URL + verificação de estado vazio |
-| CT-003.3 | Bypass direto ao Passo 4 | Comportamento documentado |
-| CT-003.4 | URL inexistente no domínio (404) | `failOnStatusCode: false` + asserção de fallback |
-| CT-004.2–4 | Botão `+` incrementa quantidade | Assert `>= 1` |
-| CT-005.1 | Botão `−` não vai abaixo de 0 | Clique 3x seguidos com assertion `>= 0` |
-| CT-005.2 | **Injeção de valor negativo via JavaScript** | `dispatchEvent` no DOM — valor total deve permanecer positivo |
-| CT-005.3 | Validação matemática do valor total | Captura estrutura completa: Diárias + Opcionais + Taxa 15% |
-| CT-005.4 | Valor cresce progressivamente por opcional | Assertion encadeada a cada adição |
-| CT-005.5 | Remoção de opcional diminui o valor | Assertion antes/depois com alias Cypress |
-| CT-006.1 | Varredura de links internos | `cy.request()` em até 20 links — status `< 400` |
-| CT-006.2 | Link do tarifário funcional | `cy.request()` no href |
+### Code Review — Erros de Lógica (Bundle JS)
 
----
+- **ERR-01 — Bug de timezone (data de criação):** Datas são exibidas com +1 dia dependendo do fuso horário. A causa raiz é o uso de `toISOString()` (UTC ao invés de data local).
+- **ERR-02 — Arquivar = Apagar:** Botão "Arquivar" executa a mesma função de deleção.
+- **ERR-03 — Bypass de validação:** Campo vazio pode ser salvo via múltiplos cliques.
+- **ERR-04 — Refresh destrói dados:** Botão de refresh limpa estado local sem aviso.
+- **ERR-05 — Lupa decorativa:** Botão de busca não possui handler (somente input filtra).
+- **ERR-06 — Empty state inconsistente:** Mensagem de lista vazia não reaparece após deletar todos os itens.
+- **ERR-07 — Login com falso erro:** Credenciais válidas exibem modal de erro antes do login.
+- **ERR-08 — Recuperação de senha inexistente:** Link não possui ação ou rota associada.
 
-## ⚙️ Como Executar
+### Casos de Teste (QA Evidence)
 
-### Pré-requisitos
-- Node.js 18 ou superior
+**TC-LOGIN-001 — Login válido**
+*Pré-condição: Usuário na tela de login*
+Passos:
+1. Inserir email válido
+2. Inserir senha válida
+3. Clicar em "Entrar"
 
-### Instalação
-```bash
-npm install
-```
+- **Resultado esperado:** Redirecionamento direto para `/dashboard`.
+- **Resultado observado:** Modal de erro exibido mesmo com credenciais corretas. Após clicar em "Continuar", login é efetuado.
+*(Evidência — Exemplo)*
+![Evidência de Login Error](./cypress/screenshots/login-error.png)
 
-### Executar todos os testes (modo headless)
-```bash
-npm run cypress:run
-# ou
-npx cypress run
-```
+**TC-DB-001 — Criar item no banco de dados**
+Passos:
+1. Acessar módulo "Bancos de Dados"
+2. Criar novo item
+3. Salvar
 
-### Executar com interface gráfica (modo interativo)
-```bash
-npm run cypress:open
-# ou
-npx cypress open
-```
+- **Resultado esperado:** Item persistido via backend e mantido após reload.
+- **Resultado observado:** Item existe apenas em memória, sendo perdido após refresh.
+*(Evidência — Exemplo)*
+![Evidência de Falha de Persistência](./cypress/screenshots/db-error.png)
 
-### Executar uma suíte específica
-```bash
-npx cypress run --spec "cypress/e2e/03_bypass_url.cy.js"
-```
+**TC-DB-002 — Exclusão de item**
+- **Resultado esperado:** Item removido corretamente via backend.
+- **Resultado observado:** Item removido da lista (sem persistência backend envolvida).
+*(Evidência — Exemplo)*
+![Evidência de Deleção Visual](./cypress/screenshots/db-delete.png)
 
----
+### Mapeamento de Bugs e Easter Eggs
 
-## 📸 Evidências Geradas Automaticamente
+| Módulo | Problema |
+| :--- | :--- |
+| Login | Modal de erro em login válido |
+| Login | Recuperação de senha inativa |
+| Banco de Dados | Arquivar = Apagar |
+| Banco de Dados | Busca decorativa |
+| Banco de Dados | Refresh apaga estado |
+| Banco de Dados | Validação bypassável |
+| Forms | Página em branco |
 
-A cada execução, o Cypress gera:
+### Considerações finais
+Neste projeto, atuei como QA com uma abordagem moderna e ofensiva de qualidade, indo além da automação tradicional de testes.
 
-- **Screenshots nomeados em português** em `cypress/screenshots/`, organizados por spec
-- **Vídeo MP4 completo** em `cypress/videos/` — um por spec executado
-- Cada screenshot usa `cy.screenshotFoco()` — comando customizado que recorta apenas o elemento em interação (não a página inteira)
+Minha análise incluiu:
+- automação de testes E2E com Cypress (Page Object Model)
+- análise de segurança com foco em vulnerabilidades
+- investigação de comportamento da aplicação em runtime
+- leitura e engenharia reversa de bundle JavaScript (code review estático)
+- identificação de inconsistências estruturais e falhas de UX
+- validação de fluxos críticos e regras de negócio
 
----
+O objetivo não foi apenas validar funcionalidades, mas sim simular uma análise real de qualidade em ambiente de produção, identificando riscos funcionais, estruturais e de segurança.
 
-## 🔧 Comandos Customizados
+### Relatório complementar
+A documentação completa dos testes manuais, exploratórios e achados de segurança está disponível no Relatório de Testes anexado a este repositório.
 
-| Comando | Descrição |
-|---|---|
-| `cy.acceptCookies()` | Aceita o banner de cookies LGPD (OneTrust), se presente |
-| `cy.screenshotFoco(nome, seletor, padding)` | Screenshot focado — usa `getBoundingClientRect` + `clip` |
-| `cy.screenshotViewport(nome)` | Screenshot da viewport apenas (sem scroll full-page) |
-
----
-
-## 🔄 CI/CD — GitHub Actions
-
-O workflow `.github/workflows/cypress.yml` executa automaticamente a suíte completa a cada `push` ou `pull_request` na branch `master`, em ambiente Ubuntu com Node.js 22.
-
----
-
-## 📚 Documentação Técnica
-
-- [Plano de Testes](./Plano_de_Testes.md) — Estratégia, escopo, arquitetura e cenários mapeados
-- [Relatório de Testes](./Relatorio_de_Testes.md) — Resultados, evidências e análise de defeitos
-
----
-
-## 🛠️ Stack
-
-| Tecnologia | Versão | Uso |
-|---|---|---|
-| Cypress | 13.x | Framework de automação E2E |
-| Node.js | 22.x | Runtime |
-| JavaScript | ES6+ | Linguagem dos testes |
-| GitHub Actions | — | CI/CD pipeline |
+### Encerramento
+Obrigado pela oportunidade de participar do desafio técnico. Fico à disposição para os próximos passos.
