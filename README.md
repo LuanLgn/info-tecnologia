@@ -1,19 +1,20 @@
-Este repositório contém a suíte de testes E2E (End-to-End) e a documentação técnica da auditoria realizada na plataforma InfoTecnologia.
+Este repositório contém a suíte de testes E2E (End-to-End) e a documentação técnica da automação realizada no portal Unidas (Projeto InfoTecnologia).
 
 O escopo do projeto vai além da automação de fluxos funcionais, incluindo:
-- Testes exploratórios com foco em regras de negócio de fluxo de aluguel (carrinho, datas, opcionais)
-- Validação do motor de cálculos dinâmico (soma de diárias, taxas e equipamentos extras)
-- Mapeamento de falhas de segurança de rotas e inconsistências no Frontend
-- Documentação de bugs estruturais com impacto real no sistema
+- Testes exploratórios e cenários de borda (bypass de rotas)
+- Validação matemática e lógica no front-end (cálculos de opcionais, diárias e taxas)
+- Varredura de links quebrados em ambiente de produção
+- Documentação e mapeamento de inconsistências estruturais no front-end (Angular Material)
 
-Durante a análise da aplicação foram identificados:
-- 2 Vulnerabilidades de controle de sessão (bypass direto para rotas de fechamento sem preencher dados)
-- 4 bugs de lógica matemática e persistência de carrinho
-- 3 problemas de UX (seletores Angular Material falhos)
-- Cobertura de testes E2E com Cypress + Page Object Model (POM)
+Durante a análise da aplicação foram desenhados e executados 27 cenários de teste. O saldo da automação resultou em:
+- 13 Cenários Positivos (Caminho Feliz) validados com sucesso
+- 14 Cenários Negativos / Borda testados
+- 4 Validações de segurança em navegação (Bypass URL) 100% protegidas pela aplicação
+- 1 Defeito (Bug) de UI mapeado na estrutura do Angular Material
+- Cobertura de testes E2E estruturada com Cypress + Page Object Model (POM)
 
 ### Arquitetura de Automação
-A automação foi estruturada utilizando Cypress com padrão Page Object Model (POM), garantindo escalabilidade e manutenção.
+A automação foi estruturada utilizando Cypress com padrão Page Object Model (POM), garantindo escalabilidade e manutenção. Os dados e fixtures foram isolados da lógica dos testes.
 
 ```
 cypress/e2e/
@@ -32,69 +33,55 @@ cypress/e2e/
 
 ### Análise de Segurança & Regras de Negócio
 
-**SEC-001 — Bypass de fluxo via URL**
-- **Resultado Esperado:** O sistema deve validar a sessão e dados em memória, barrando o acesso direto a etapas finais do funil (ex: Passo 3) sem ter selecionado os itens anteriores.
-- **Resultado Obtido:** Permite o carregamento da página de resumo sem dados no backend, gerando instabilidade na aplicação.
+**CT-003 — Bypass de URL (Segurança de Rotas)**
+- **Objetivo:** Tentar acessar rotas dos Passos 2, 3 e 4 do fluxo de reserva diretamente pela URL, sem possuir uma sessão ou preencher os dados anteriores.
+- **Resultado:** A aplicação trata o fluxo de forma segura. Nenhuma falha de IDOR ou exposição foi encontrada. O sistema aplica o "fallback" corretamente, redirecionando para páginas seguras ou de erro.
 
-**SEC-002 — Validação Tardia de Datas**
-- **Resultado Esperado:** Barrar o input de devolução menor que o de retirada imediatamente no frontend.
-- **Resultado Obtido:** O sistema aceita a entrada visualmente e apenas trava (ou anula) nas etapas seguintes.
+**CT-005 — Injeção JS e Botões Negativos**
+- **Objetivo:** Forçar a adição de valores negativos nos acessórios via painel e injeção de eventos JS (`dispatchEvent`).
+- **Resultado:** A aplicação possui regras sólidas no DOM e não vai abaixo de `0`. O valor total da locação permanece positivo e a lógica matemática de `Diárias + Opcionais + 15% Taxa` não é corrompida.
 
-**SEC-003 — Manipulação de Inputs Quantitativos**
-- **Descrição:** Inputs de adição de acessórios não possuem sanitização contra números negativos injetados via Console/JS (`dispatchEvent`).
-- **Resultado:** A requisição é enviada para validação. Felizmente, o backend anula os valores, impedindo um cálculo negativo no carrinho.
+### Code Review — Defeitos Encontrados (Frontend / UI)
 
-### Code Review — Erros de Lógica (Frontend / UI)
-
-- **ERR-01 — Seletores Ocultos (Angular):** O botão de `+` de opcionais (como "Assento de Elevação") embute um ícone `<mat-icon>` que não dispara o evento caso clicado na borda. 
-- **ERR-02 — Empty State com Delay:** Adicionar e remover acessórios causa recálculos agressivos na árvore do DOM, resultando em flickering (tela piscando).
-- **ERR-03 — Fluxo de erro "Silencioso":** Tentar pular para uma URL 404 redireciona para um fallback não padronizado, quebrando os estilos da página principal.
+**DEF-001 — Botão '+' nos opcionais com quantidade (Medium)**
+- **Problema:** O seletor do botão '+' nos opcionais (Cadeira de Bebê, Bebê Conforto) não localiza o elemento Angular Material de forma acessível. 
+- **Causa Raiz:** O Angular renderiza o ícone como `<mat-icon>add</mat-icon>` dentro de um botão genérico sem atributo `aria-label` ou `id` claro para automação ou acessibilidade. A busca depende da estrutura exata do nó da árvore (quebrando os testes frequentemente quando o layout muda).
 
 ### Casos de Teste (QA Evidence)
 
-**TC-FLUXO-001 — Fluxo Positivo Completo**
-*Pré-condição: Usuário não autenticado na página principal*
-Passos:
-1. Buscar local de retirada (Ex: Confins) e data.
-2. Avançar para o painel de veículos.
-3. Escolher o primeiro veículo e prosseguir.
-4. Adicionar opcional (Lavagem Antecipada) na aba de serviços.
-- **Resultado esperado:** Valor somado com sucesso, avançando para a tela final de identificação do motorista.
-*(Evidência)*
+**CT-001.13 — Todos os opcionais + avanço Passo 4**
+- **Pré-condição:** Usuário acessa o formulário de reserva na Home.
+- **Passos:** 
+  1. Preencher Aeroporto de Confins, datas e horas.
+  2. Escolher o grupo de veículo.
+  3. Adicionar opcionais: Cadeira de Bebê, Lavagem Antecipada e Locação Jovem.
+- **Resultado esperado:** Valor recálculado a cada clique, permitindo fechar a reserva.
+- **Resultado observado:** O fluxo de fechamento e cálculos foi executado e aprovado com sucesso.
 
-
-**TC-SEC-001 — Bypass de URL de Resumo**
-*Pré-condição: Sem sessão de reserva ativa.*
-Passos:
-1. Acessar diretamente a rota do Passo 3 de resumo.
-- **Resultado esperado:** Bloqueio e redirect.
-- **Resultado observado:** O layout carrega vazio ou quebrado.
-*(Evidência)*
-
+**CT-002.1 — Data de devolução anterior à retirada**
+- **Resultado esperado:** O backend não deve ser estressado com datas ilógicas. O front deve barrar.
+- **Resultado observado:** Validado utilizando `cy.intercept`. Nenhuma requisição HTTP é disparada ao tentar preencher o formulário no formato inválido.
 
 ### Mapeamento de Bugs 
 
-| Módulo | Problema |
-| :--- | :--- |
-| Busca | Permite data de devolução anterior à de retirada visualmente |
-| URL | Rotas de fechamento sem proteção de estado `Guard` |
-| Resumo | Layout quebra se acessado diretamente |
-| Opcionais | Botão (+) possui hitbox menor do que aparenta visualmente |
+| Módulo | Problema | Severidade |
+| :--- | :--- | :--- |
+| Opcionais (Angular) | O seletor do botão "+" nos acessórios usa ícone puro sem label de acessibilidade (mat-icon) | Média |
 
 ### Considerações finais
 Neste projeto, atuei como QA com uma abordagem moderna e ofensiva de qualidade, indo além da automação tradicional de testes.
 
 Minha análise incluiu:
 - automação de testes E2E com Cypress (Page Object Model)
-- análise de validações matemáticas do carrinho de compras
-- investigação de vulnerabilidades de sessão e rotas
-- identificação de inconsistências estruturais e falhas de UX
-- validação de fluxos críticos e regras de negócio complexas
+- análise de segurança estrutural com testes de bypass de URLs
+- investigação de comportamento da aplicação em runtime (foco em injeção JavaScript e limites no carrinho)
+- mapeamento de falhas de acessibilidade e seletores (Angular Material)
+- validação matemática complexa em formulários dinâmicos
 
-O objetivo não foi apenas validar funcionalidades, mas sim simular uma análise real de qualidade em ambiente de produção, identificando riscos funcionais, estruturais e de negócios.
+O objetivo não foi apenas validar funcionalidades (o chamado "Happy Path"), mas sim simular uma análise real de qualidade em ambiente de produção, identificando riscos na arquitetura front-end e atestando a integridade das regras de negócio.
 
 ### Relatório complementar
-A documentação completa dos testes manuais, exploratórios e achados funcionais está disponível no Relatório de Testes anexado a este repositório.
+A documentação completa do Plano de Testes e os resultados detalhados estão anexados à documentação deste repositório.
 
 ### Encerramento
 Obrigado pela oportunidade de participar do desafio técnico. Fico à disposição para os próximos passos.
