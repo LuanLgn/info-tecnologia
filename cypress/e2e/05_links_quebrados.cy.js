@@ -1,14 +1,8 @@
 /// <reference types="cypress" />
 /**
- * SUÍTE 05 — Varredura de Links Quebrados (Link Checker)
- * ───────────────────────────────────────────────────────
- * Varre todos os links (<a href>) da página inicial e valida que
- * nenhum retorna status 4xx ou 5xx.
- *
- * Técnica de nível Sênior:
- * - cy.request() para fazer HEAD request em cada link sem abrir nova janela
- * - Filtragem de links externos vs. internos
- * - Relatório consolidado de links com falha
+ * Health check da home: Caça de broken links
+ * - Varrendo todos os hrefs pra ver se tem algum erro 404/500
+ * - Fazendo req do tipo HEAD pra ficar rápido e não engasgar o teste
  */
 
 describe('[CT-006] Varredura de Links — Integridade de Navegação', () => {

@@ -2,7 +2,7 @@ class SummaryPage {
   // Valor base capturado antes de adicionar opcionais (Cypress alias)
   _valorInicial = 0;
 
-  // ── Elementos genéricos do resumo ──────────────────────────────────────────
+  // Elementos da tela
   elementos = {
     resumoContainer:  () => cy.get('body'),
     botaoContinuar:   () => cy.contains('button', 'CONTINUAR').or(cy.contains('button', 'Continuar')),
@@ -10,7 +10,7 @@ class SummaryPage {
     secaoOpcionais:   () => cy.contains(/acessórios e serviços|adicionais|opcionais/i),
   }
 
-  // ── Helper: encontra o card de um opcional pelo texto e retorna o wrapper ──
+  // Função de apoio pra achar o card pelo nome
   _card(nomeOpcional) {
     return cy.contains(new RegExp(nomeOpcional, 'i'))
       .scrollIntoView()
@@ -18,7 +18,7 @@ class SummaryPage {
       .first();
   }
 
-  // ── Helper: lê o valor total atual como número ─────────────────────────────
+  // Função de apoio pra ler e converter o preço da tela
   _lerValorTotal() {
     return cy.get('body').invoke('text').then((texto) => {
       // Busca padrão "Valor total: R$ 420,53" no texto da página
@@ -48,7 +48,7 @@ class SummaryPage {
     return this;
   }
 
-  // ── Botão "+" em opcionais com spinner de quantidade ─────────────────────
+  // Interação de add (botão +)
   _clicarMais(nomeOpcional) {
     cy.get('body').then(($body) => {
       if (!$body.text().match(new RegExp(nomeOpcional, 'i'))) {
@@ -68,7 +68,7 @@ class SummaryPage {
     });
   }
 
-  // ── Checkbox para opcionais de seleção única ───────────────────────────────
+  // Interação de add (checkbox)
   _clicarCheckbox(nomeOpcional) {
     cy.get('body').then(($body) => {
       if (!$body.text().match(new RegExp(nomeOpcional, 'i'))) {
@@ -88,7 +88,7 @@ class SummaryPage {
     });
   }
 
-  // ── Ações públicas por opcional ────────────────────────────────────────────
+  // Métodos que a gente chama nos testes
   adicionarCadeiraDeBebe()      { this._clicarMais('cadeira de bebê');       return this; }
   adicionarAssentoDeElevacao()  { this._clicarMais('assento de elevação');   return this; }
   adicionarBebeConforto()       { this._clicarMais('bebê conforto');          return this; }
@@ -97,7 +97,7 @@ class SummaryPage {
   adicionarMotoristaAdicional() { this._clicarMais('motoristas adicionais');  return this; }
   adicionarGPS()                { this._clicarMais('gps');                    return this; }
 
-  // ── Removedor (botão "−") ──────────────────────────────────────────────────
+  // Interação de remover (botão -)
   removerOpcional(nomeOpcional) {
     cy.get('body').then(($body) => {
       if (!$body.text().match(new RegExp(nomeOpcional, 'i'))) return;
@@ -115,7 +115,7 @@ class SummaryPage {
     return this;
   }
 
-  // ── Assertions de valor ───────────────────────────────────────────────────
+  // Validações de valores
   validarValorFinalMaiorQueInicial() {
     cy.get('@valorInicial').then((valorInicial) => {
       this._lerValorTotal().then((valorFinal) => {

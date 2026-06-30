@@ -1,7 +1,5 @@
 // cypress/support/commands.js
-// ─────────────────────────────────────────────────────────────────────────────
-// Comandos Customizados do Cypress — Nível Pleno
-// ─────────────────────────────────────────────────────────────────────────────
+// Comandos customizados úteis pro nosso dia a dia de QA
 
 /**
  * cy.acceptCookies()
@@ -21,8 +19,7 @@ Cypress.Commands.add('acceptCookies', () => {
 
 /**
  * cy.screenshotFoco(nomeArquivo, seletor)
- * ─────────────────────────────────────────
- * Tira um screenshot "focado" em um elemento específico da tela.
+ * Tira um print mais focado num elemento específico.
  * Calcula automaticamente as dimensões e posição do elemento via getBoundingClientRect()
  * e usa a opção `clip` do Cypress para capturar apenas aquela área + padding de contexto.
  *
@@ -53,8 +50,7 @@ Cypress.Commands.add('screenshotFoco', (nomeArquivo, seletor, padding = 60) => {
 
 /**
  * cy.screenshotViewport(nomeArquivo)
- * ─────────────────────────────────
- * Tira um screenshot da viewport atual (sem capturar a página inteira).
+ * Tira um print só da parte visível da tela.
  * Use para prints de estado geral onde não há um único elemento de foco.
  *
  * @param {string} nomeArquivo - Nome do arquivo de screenshot

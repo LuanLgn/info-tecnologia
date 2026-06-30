@@ -1,9 +1,8 @@
 /// <reference types="cypress" />
 /**
- * SUÍTE 01 — Fluxo Positivo (Caminho Feliz)
- * ─────────────────────────────────────────
- * Screenshots com foco no elemento sendo interagido — cy.screenshotFoco()
- * Padrão: Page Object Model + Data-Driven (Fixtures) + Network Control
+ * Validação do caminho feliz da reserva
+ * - Tirar print das partes importantes da tela pra facilitar a rastreabilidade
+ * - Aplicado POM, fixtures pra dados e cy.intercept pra evitar flakiness
  */
 import HomePage from '../support/pages/HomePage';
 import VehicleSelectionPage from '../support/pages/VehicleSelectionPage';

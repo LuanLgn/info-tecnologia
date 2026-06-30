@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 /**
- * SUÍTE 04 — Validação de Opcionais e Cálculo de Valor Total
- * ────────────────────────────────────────────────────────────
- * Usa cy.screenshotFoco() para capturar apenas o card do opcional sendo testado.
+ * Validação do carrinho/resumo
+ * - Garantir que a soma dos opcionais tá batendo com o total
+ * - Usar foco no screenshot pra não ficar poluído
  */
 
 import HomePage from '../support/pages/HomePage';

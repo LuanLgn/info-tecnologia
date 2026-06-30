@@ -1,15 +1,9 @@
 /// <reference types="cypress" />
 /**
- * SUÍTE 02 — Validação de Datas (Cenários Negativos)
- * ────────────────────────────────────────────────────
- * Valida o comportamento da aplicação quando o usuário fornece
- * datas inválidas (devolução anterior à retirada).
- *
- * Técnicas de nível Pleno:
- * - Interceptação de chamadas de rede para garantir que nenhuma
- *   requisição de busca seja feita com dados inválidos.
- * - Asserções de estado da UI (mensagem de erro / botão desabilitado).
- * - Screenshots nomeados com o CT correspondente para rastreabilidade.
+ * Cenário negativo de datas do formulário
+ * - Testar o bloqueio quando a devolução é antes da retirada
+ * - Importante usar intercept pra garantir que não vaza requisição
+ * - Conferir mensagens de erro e bloqueio do botão
  */
 
 describe('[CT-002] Validação de Datas Inválidas', () => {

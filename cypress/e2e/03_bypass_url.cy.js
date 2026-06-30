@@ -1,16 +1,9 @@
 /// <reference types="cypress" />
 /**
- * SUÍTE 03 — Bypass de URL / Pulos de Etapa (Cenários Negativos)
- * ──────────────────────────────────────────────────────────────────
- * Valida se a aplicação protege rotas que exigem dados de sessão/contexto.
- * Um engenheiro QA Pleno sabe que atacar o fluxo via URL é uma das primeiras
- * formas de encontrar falhas de segurança e estado em aplicações SPA (Angular).
- *
- * Técnicas de nível Pleno/Sênior:
- * - Acesso direto a rotas protegidas (deep link manipulation)
- * - Verificação de redirecionamento automático
- * - Interceptação do cy.on('window:before:load') para simular ausência de estado
- * - Asserções de URL e conteúdo após tentativa de acesso indevido
+ * Teste de segurança/estado: Bypass de URL
+ * - Validar se a SPA protege as rotas sem sessão ativa
+ * - Tentativa de deep link direto pro passo 2 sem preencher a home
+ * - Deve rolar um redirect automático pra home
  */
 
 describe('[CT-003] Bypass de URL — Acesso Direto a Etapas Protegidas', () => {
